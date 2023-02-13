@@ -1,0 +1,186 @@
+<template>
+  <div class="list row">
+    <div class="col-md-8">
+      <div class="input-group mb-3">
+        <input type="text" class="form-control" placeholder="Search by url"
+          v-model="url"/>
+        <div class="input-group-append">
+          <button class="btn btn-outline-secondary" type="button"
+            @click="searchUrl"
+          >
+            Search
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <h4>Web Page List</h4>
+      <ul class="list-group">
+        
+        <li name="Web Page" class="list-group-item"
+          :class="{ active: index == currentIndex }"
+          v-for="(webPage, index) in webPages"
+          :key="index"
+          @click="setActiveWebPage(webPage, index)"
+        >  
+          {{ webPage.url }}
+    
+
+        </li>
+
+      </ul>
+
+      <button class="m-3 btn btn-sm btn-danger" @click="removeAllWebPages">
+        Remove All
+      </button>
+
+      <a class="m-3 btn btn-sm btn-success"
+          :href="'/webpage/add'"
+        >
+          Add
+        </a>
+
+    </div>
+    <div class="col-md-6">
+      <div v-if="currentWebPage">
+        <h4>Page Web</h4>
+        
+        
+          <div>
+          <label><strong>Url:</strong></label> {{ currentWebPage.url }}
+        </div>
+
+        <div>
+          <label><strong>Link:</strong></label> {{ currentWebPage.itsLink }}
+        </div>
+
+        <div>
+          <label><strong>Ping:</strong></label> {{ currentWebPage.valid }}
+        </div>
+
+        
+
+        <a class="badge badge-warning"
+          :href="'/webpage/' + currentWebPage.id"
+        >
+          Edit
+        </a>
+        
+
+      </div>
+      <div v-else>
+        <br />
+        <p>Please click on a Web Page...</p>
+      </div>
+    </div>
+    <table>
+            <tr>
+                <th> Target Link </th>
+                <th> Destination Link </th>
+                <th> Result </th>
+            </tr>
+            <tr v-for="pingLink in this.pingLinks" :key="pingLink.url">
+                <td> {{ pingLink.url }} </td>
+                <td> {{ pingLink.itsLink }} </td>
+                <td> {{ pingLink.valid }} </td>
+            </tr>
+            
+        </table>
+  </div>
+</template>
+
+<script>
+import WebPageServiceData from "../services/WebPageServiceData";
+//import axios from 'axios'
+export default {
+  
+  name: "webpage-list",
+  data() {
+    return {
+      webPages: [],
+      currentWebPage: null,
+      currentIndex: -1,
+      url: ""
+    };
+  },
+  //async created(){
+   //     this.pingLinks = (await axios.get('http://localhost:8080/api/webPage/api/ping/pingLinks')).data;
+    //},
+  computed: {
+      currentUser() {
+        return this.$store.state.auth.user;
+      }
+    },
+
+  methods: {
+    retrieveWebPage() {
+      //WebPageServiceData.getAll()
+      WebPageServiceData.getAllbyUserID(this.currentUser.id)
+        .then(response => {
+          this.webPages = response.data;
+          console.log(response.data);
+        })
+        .catch(e => {
+          console.log(e);
+        });
+    },
+
+    
+
+    refreshList() {
+      this.retrieveWebPage();
+      this.currentWebPage = null;
+      this.currentIndex = -1;
+    },
+
+    setActiveWebPage(webpage, index) {
+      this.currentWebPage = webpage;
+      this.currentIndex = index;
+    },
+
+    removeAllWebPages() {
+        WebPageServiceData.deleteAllbyUserID(this.currentUser.id)
+          .then(response => {
+            console.log(response.data);
+            this.refreshList();
+          })
+          .catch(e => {
+            console.log(e);
+          });
+      },
+    
+    searchUrl() {
+      WebPageServiceData.findByUrl(this.url)
+        .then(response => {
+          this.webPages = response.data;
+          console.log(response.data);
+        })
+        .catch(e => {
+          console.log(e);
+        });
+    }
+  },
+  mounted() {
+    this.retrieveWebPage();
+
+    if (!this.currentUser) {
+        this.$router.push('/login');
+      }
+  }
+
+  
+
+};
+
+
+
+
+</script>
+
+<style>
+.list {
+  text-align: left;
+  max-width: 750px;
+  margin: auto;
+}
+</style>
